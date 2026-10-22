@@ -73,12 +73,14 @@ struct SettingsView: View {
                 Toggle(title, isOn: isOn)
                     .toggleStyle(.checkbox)
                     .disabled(disabled)
+                    .accessibilityHint(caption)
             }
             Text(caption)
                 .font(.system(size: 10.5))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.leading, 18)
+                .accessibilityHidden(true)
             if let note {
                 Text(note)
                     .font(.system(size: 10.5))

@@ -94,6 +94,22 @@ struct SessionRowView: View {
 
     private var contextFraction: Double? { row.session.context?.fraction }
 
+    private var accessibilitySummary: String {
+        var parts = [row.session.title, row.session.project]
+        switch row.phase {
+        case .attention: parts.append("waiting for you")
+        case .running: parts.append("running for \(timing)")
+        case .done: parts.append("finished \(timing)")
+        }
+        if let fraction = contextFraction {
+            parts.append("\(Int((fraction * 100).rounded())) percent of context")
+        }
+        if row.session.cost > 0 {
+            parts.append(Format.money(row.session.cost))
+        }
+        return parts.joined(separator: ", ")
+    }
+
     private var contextColor: Color {
         guard let fraction = contextFraction else { return Theme.secondaryText }
         return fraction >= Config.compactionWarning ? Theme.warning : .white.opacity(0.55)
@@ -126,6 +142,9 @@ struct SessionRowView: View {
         .padding(.vertical, 6)
         .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(background))
         .contentShape(Rectangle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilitySummary)
+        .accessibilityAddTraits(.isButton)
         .onHover { hovering = $0 }
         .onAppear(perform: startPulseIfNeeded)
     }
