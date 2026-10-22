@@ -14,5 +14,12 @@ jobs:
         run: swiftc --version
       - name: Test
         run: make test
-      - name: Bundle
-        run: make bundle
+      - name: Bundle and render docs
+        run: make docs
+      - name: Check bundle
+        run: |
+          APP="build/OpenChamber Mini Status.app"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")" = "dev.openchamber.mini-status"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")" = "1.0.0"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' "$APP/Contents/Info.plist")" = "true"
+          codesign --verify --deep --strict "$APP"
