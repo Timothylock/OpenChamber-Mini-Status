@@ -6,6 +6,9 @@ struct SettingsView: View {
     @ObservedObject var preferences: Preferences
     var installed: Bool = LoginItem.isInstallLocation
     var onResetPosition: () -> Void
+    /// Documentation renders draw the checkbox glyph themselves, because ImageRenderer
+    /// captures the AppKit checkbox as a placeholder.
+    var renderControls = false
 
     private var version: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
@@ -58,9 +61,19 @@ struct SettingsView: View {
         note: String? = nil
     ) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Toggle(title, isOn: isOn)
-                .toggleStyle(.checkbox)
-                .disabled(disabled)
+            if renderControls {
+                HStack(spacing: 6) {
+                    Image(systemName: isOn.wrappedValue ? "checkmark.square.fill" : "square")
+                        .font(.system(size: 13))
+                        .foregroundStyle(isOn.wrappedValue ? Color.accentColor : Color.secondary)
+                    Text(title)
+                        .font(.system(size: 13))
+                }
+            } else {
+                Toggle(title, isOn: isOn)
+                    .toggleStyle(.checkbox)
+                    .disabled(disabled)
+            }
             Text(caption)
                 .font(.system(size: 10.5))
                 .foregroundStyle(.secondary)

@@ -4,7 +4,7 @@ A small always-on-top widget that shows what your OpenChamber chats are doing: f
 
 Each row carries the chat title, where it lives, how much of the model's context window it has used, what it has cost so far, and how long it has been running or how long ago it finished. Chats that finished a turn stay in the list, pulsing amber until you open them. Click one and OpenChamber opens that chat.
 
-![The widget showing four chats](docs/screenshot.png)
+![The widget showing two chats waiting on you and two running](docs/screenshot.png)
 
 ## What it does
 
@@ -66,7 +66,9 @@ Dot colours: amber pulsing means a turn finished and you have not opened it yet;
 
 ## Settings
 
-Open Settings from the menu bar icon (or by right-clicking the widget). Three switches:
+Open Settings from the menu bar icon (or by right-clicking the widget). Four switches:
+
+![The settings window](docs/settings.png)
 
 | Switch | What it does |
 | --- | --- |
@@ -108,6 +110,7 @@ Everything tunable lives in `Sources/Core/Config.swift`: row count, polling inte
 make build            # compile the binary
 make test             # run the test executable
 make snapshot         # render the widget to build/hud.png
+make docs             # regenerate the README screenshots in docs/
 make bundle           # build the .app bundle with its icon
 make run              # bundle and open it
 make dist             # disk image and zip for a release
@@ -122,7 +125,7 @@ Tests/          executable test harness (the toolchain here has no SwiftPM)
 scripts/        bundle, icon, install, uninstall, dist
 ```
 
-`make snapshot` renders the live widget to a PNG with the real data, and `--snapshot-settings PATH` renders the settings window. That is how the screenshot above was made, without needing screen recording permission.
+`make docs` regenerates the images in `docs/` from invented chats (`--snapshot-demo`) and the settings window (`--snapshot-settings`), so no real project names end up in the README. `make snapshot` instead renders the live widget with your own data. Neither needs screen recording permission.
 
 ### Releasing
 

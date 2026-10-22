@@ -84,6 +84,15 @@ public final class SessionStore: ObservableObject {
 
     // MARK: lifecycle
 
+    /// Fixed rows for documentation renders: never opens the database, never polls.
+    public static func preview(rows: [Row], now: Int64, onlyActive: Bool) -> SessionStore {
+        let store = SessionStore()
+        store.rows = rows
+        store.now = now
+        store.onlyActive = onlyActive
+        return store
+    }
+
     public func start() {
         openDatabase()
         context.start()

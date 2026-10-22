@@ -7,7 +7,7 @@ export VERSION
 CORE_SOURCES := $(wildcard Sources/Core/*.swift)
 APP_SOURCES := $(wildcard Sources/App/*.swift)
 
-.PHONY: build test bundle icon icon-run run snapshot install uninstall dist clean
+.PHONY: build test bundle icon icon-run run snapshot docs install uninstall dist clean
 
 build: $(BINARY)
 
@@ -31,6 +31,10 @@ run: bundle
 
 snapshot: bundle
 	"$(APP)/Contents/MacOS/mini-status" --snapshot build/hud.png
+
+docs: bundle
+	"$(APP)/Contents/MacOS/mini-status" --snapshot-demo docs/screenshot.png
+	"$(APP)/Contents/MacOS/mini-status" --snapshot-settings docs/settings.png
 
 install: bundle
 	./scripts/install.sh
