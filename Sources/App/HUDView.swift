@@ -84,7 +84,7 @@ struct SessionRowView: View {
         switch row.phase {
         case .running:
             // A running row counts the current turn, not the age of the whole chat.
-            let start = row.session.lastUserMessageAt ?? row.session.createdAt
+            let start = row.session.turnStartedAt ?? row.session.createdAt
             return Format.duration(now - start)
         case .attention, .done:
             let reference = row.session.idleAt ?? row.session.updatedAt

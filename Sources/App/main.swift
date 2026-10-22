@@ -19,6 +19,8 @@ func usage() -> String {
                                    render the settings window to a PNG and exit
       mini-status --probe-remote    print OpenChamber session state and exit
       mini-status --probe-shell DIR print sessions with running background shells and exit
+      mini-status --probe-fallback [DIR]
+                                   print opencode-server fallback states and exit
       mini-status --help           print this message
     """
 }
@@ -93,7 +95,7 @@ func renderDemoSnapshot(to path: String) {
                 lastMessageType: "assistant",
                 model: "example/model",
                 workState: "open",
-                lastUserMessageAt: now - age,
+                turnStartedAt: now - age,
                 context: ContextUsage(used: used, limit: 200_000)
             )
         }
@@ -170,6 +172,19 @@ if let index = arguments.firstIndex(of: "--probe-shell") {
     provider.setDirectories([directory])
     RunLoop.current.run(until: Date().addingTimeInterval(3))
     print("shell sessions: \(provider.runningShellSessions.sorted())")
+    provider.stop()
+    exit(0)
+}
+
+if let index = arguments.firstIndex(of: "--probe-fallback") {
+    var directories: [String] = []
+    if arguments.count > index + 1 { directories = [arguments[index + 1]] }
+    let provider = ContextProvider()
+    provider.start()
+    provider.setDirectories(directories)
+    provider.setFallbackEnabled(true)
+    RunLoop.current.run(until: Date().addingTimeInterval(5))
+    print("fallback states: \(provider.fallbackStates.sorted { $0.key < $1.key })")
     provider.stop()
     exit(0)
 }

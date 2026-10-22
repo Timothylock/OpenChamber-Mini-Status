@@ -91,7 +91,7 @@ func row(_ id: String, _ phase: Phase) -> Row {
             lastMessageType: "assistant",
             model: "",
             workState: nil,
-            lastUserMessageAt: nil,
+            turnStartedAt: nil,
             context: nil
         ),
         phase: phase
@@ -281,6 +281,23 @@ equal(
     OpenChamberEndpoints.sessions(fromJSON: Data(#"{"sessions":{}}"#.utf8)),
     [:],
     "empty session payload"
+)
+equal(
+    OpenChamberEndpoints.activeSessions(fromJSON: Data(#"{"data":{"ses_live":{"type":"running"},"ses_other":{"type":"idle"}}}"#.utf8)),
+    ["ses_live"],
+    "active sessions come from the opencode server"
+)
+equal(
+    OpenChamberEndpoints.requestSessionIDs(
+        fromJSON: Data(#"{"data":[{"id":"per_1","sessionID":"ses_blocked"},{"id":"per_2","sessionID":"global"}]}"#.utf8)
+    ),
+    ["ses_blocked"],
+    "pending requests name their session and skip the global owner"
+)
+equal(
+    OpenChamberEndpoints.requestSessionIDs(fromJSON: Data(#"{"data":[]}"#.utf8)),
+    [],
+    "no pending requests"
 )
 equal(
     Phases.phase(

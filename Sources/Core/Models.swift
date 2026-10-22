@@ -17,7 +17,7 @@ public struct ChatSession: Identifiable, Equatable {
     /// OpenChamber's work state: "open" means it sits in its In work list.
     public let workState: String?
     /// When the current turn started, which is what a running clock counts from.
-    public let lastUserMessageAt: Int64?
+    public let turnStartedAt: Int64?
     public let context: ContextUsage?
 
     public init(
@@ -33,7 +33,7 @@ public struct ChatSession: Identifiable, Equatable {
         lastMessageType: String?,
         model: String,
         workState: String?,
-        lastUserMessageAt: Int64?,
+        turnStartedAt: Int64?,
         context: ContextUsage?
     ) {
         self.id = id
@@ -48,7 +48,7 @@ public struct ChatSession: Identifiable, Equatable {
         self.lastMessageType = lastMessageType
         self.model = model
         self.workState = workState
-        self.lastUserMessageAt = lastUserMessageAt
+        self.turnStartedAt = turnStartedAt
         self.context = context
     }
 

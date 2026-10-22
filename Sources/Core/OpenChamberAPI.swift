@@ -46,6 +46,31 @@ public enum OpenChamberEndpoints {
         return result
     }
 
+    /// Session ids the opencode server reports with a foreground drain running.
+    /// Used when OpenChamber's desktop API is off, so a running chat still turns blue.
+    public static func activeSessions(fromJSON data: Data) -> Set<String> {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let sessions = root["data"] as? [String: Any]
+        else { return [] }
+        return Set(sessions.compactMap { id, raw in
+            guard let value = raw as? [String: Any],
+                  (value["type"] as? String) == "running"
+            else { return nil }
+            return id
+        })
+    }
+
+    /// Session ids behind a pending permission request or form, from either endpoint's list.
+    public static func requestSessionIDs(fromJSON data: Data) -> Set<String> {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let requests = root["data"] as? [[String: Any]]
+        else { return [] }
+        return Set(requests.compactMap { request in
+            guard let id = request["sessionID"] as? String, id != "global", !id.isEmpty else { return nil }
+            return id
+        })
+    }
+
     public static func sessions(fromJSON data: Data) -> [String: RemoteSession] {
         guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let sessions = root["sessions"] as? [String: Any]

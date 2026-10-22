@@ -21,6 +21,9 @@ public enum Config {
     public static let contextTargetLimit = 14
     /// Directories asked for running background shells per tick.
     public static let shellDirectoryLimit = 40
+    /// Directories asked for pending permissions and forms when the desktop API is off.
+    /// A chat waiting on a prompt was touched when it asked, so it sits near the top.
+    public static let fallbackDirectoryLimit = 12
     public static let modelCacheTTL: TimeInterval = 900
     public static let archiveCacheTTL: TimeInterval = 15
     public static let serverRetryInterval: TimeInterval = 5

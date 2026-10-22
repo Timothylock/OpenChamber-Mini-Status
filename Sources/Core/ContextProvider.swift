@@ -8,6 +8,9 @@ public final class ContextProvider {
     public private(set) var usage: [String: ContextUsage] = [:]
     /// Sessions with a background shell still running, which OpenChamber marks blue too.
     public private(set) var runningShellSessions: Set<String> = []
+    /// Active sessions and pending requests read straight from the opencode server, used
+    /// only while OpenChamber's desktop API is unreachable.
+    public private(set) var fallbackStates: [String: RemoteSession] = [:]
 
     private let queue = DispatchQueue(label: "dev.openchamber.mini-status.context", qos: .utility)
     private let session: URLSession
@@ -21,6 +24,7 @@ public final class ContextProvider {
     private var lastServerAttempt: Date?
     private var targets: [(id: String, model: String)] = []
     private var directories: [String] = []
+    private var fallbackEnabled = false
     private var timer: Timer?
 
     public init(serversDirectory: String = Config.managedServersDirectory) {
@@ -63,6 +67,19 @@ public final class ContextProvider {
         }
     }
 
+    /// Turns the opencode-server fallback on or off as OpenChamber's own API comes and goes.
+    public func setFallbackEnabled(_ enabled: Bool) {
+        queue.async {
+            guard self.fallbackEnabled != enabled else { return }
+            self.fallbackEnabled = enabled
+            if enabled {
+                self.tick()
+            } else {
+                self.publishFallback([:])
+            }
+        }
+    }
+
     // MARK: ticks
 
     private func tick() {
@@ -88,6 +105,9 @@ public final class ContextProvider {
                 self.probe(target, base: base, password: password)
             }
             self.loadShells(base: base, password: password)
+            if self.fallbackEnabled {
+                self.loadFallback(base: base, password: password)
+            }
         }
     }
 
@@ -193,10 +213,7 @@ public final class ContextProvider {
     private func loadShells(base: URL, password: String) {
         var sessions: Set<String> = []
         for directory in directories.prefix(Config.shellDirectoryLimit) {
-            var components = URLComponents()
-            components.path = "/api/shell"
-            components.queryItems = [URLQueryItem(name: "location[directory]", value: directory)]
-            guard let path = components.string,
+            guard let path = locationPath("/api/shell", directory),
                   let data = getData(path, base: base, password: password)
             else { continue }
             sessions.formUnion(OpenChamberEndpoints.shellSessions(fromJSON: data))
@@ -206,6 +223,48 @@ public final class ContextProvider {
                 self.runningShellSessions = sessions
             }
         }
+    }
+
+    /// OpenChamber's desktop API bundles active sessions and pending requests. When it is
+    /// off, the opencode server still knows both, one directory at a time.
+    private func loadFallback(base: URL, password: String) {
+        var states: [String: RemoteSession] = [:]
+        if let data = getData("/api/session/active", base: base, password: password) {
+            for id in OpenChamberEndpoints.activeSessions(fromJSON: data) {
+                states[id] = RemoteSession(blocked: false, idle: false, stamp: 0)
+            }
+        }
+
+        var blocked: Set<String> = []
+        for directory in directories.prefix(Config.fallbackDirectoryLimit) {
+            for endpoint in ["/api/permission/request", "/api/form"] {
+                guard let path = locationPath(endpoint, directory),
+                      let data = getData(path, base: base, password: password)
+                else { continue }
+                blocked.formUnion(OpenChamberEndpoints.requestSessionIDs(fromJSON: data))
+            }
+        }
+        for id in blocked {
+            let active = states[id]
+            states[id] = RemoteSession(blocked: true, idle: active?.idle ?? true, stamp: active?.stamp ?? 0)
+        }
+        logger.debug("fallback states: \(states.count, privacy: .public) sessions, \(blocked.count, privacy: .public) waiting")
+        publishFallback(states)
+    }
+
+    private func publishFallback(_ states: [String: RemoteSession]) {
+        DispatchQueue.main.async {
+            if self.fallbackStates != states {
+                self.fallbackStates = states
+            }
+        }
+    }
+
+    private func locationPath(_ endpoint: String, _ directory: String) -> String? {
+        var components = URLComponents()
+        components.path = endpoint
+        components.queryItems = [URLQueryItem(name: "location[directory]", value: directory)]
+        return components.string
     }
 
     private func probe(_ target: (id: String, model: String), base: URL, password: String) {        // The newest message can still be streaming, so ask for a few and take the last counted one.

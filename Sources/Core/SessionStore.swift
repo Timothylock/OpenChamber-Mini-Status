@@ -46,9 +46,9 @@ public final class SessionStore: ObservableObject {
                (select m.type from session_message m
                  where m.session_id = s.id and m.type in ('user','assistant')
                  order by m.seq desc limit 1),
-               (select m.time_created from session_message m
+               (select min(m.time_created) from session_message m
                  where m.session_id = s.id and m.type = 'user'
-                 order by m.seq desc limit 1)
+                   and m.time_created >= coalesce(s.time_idle, s.time_created))
         from session_v2 s
         where s.parent_id is null and s.time_archived is null
         order by s.time_updated desc
@@ -156,6 +156,9 @@ public final class SessionStore: ObservableObject {
         }
 
         loadArchivedIfNeeded()
+        // The desktop API is the preferred source; when it is down the opencode server
+        // still knows which sessions are running and what they are waiting on.
+        context.setFallbackEnabled(remoteStates.isEmpty)
 
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, Self.query, -1, &statement, nil) == SQLITE_OK else {
@@ -185,7 +188,7 @@ public final class SessionStore: ObservableObject {
                 now: nowMS,
                 ackedIdle: acked[session.id],
                 workState: session.workState,
-                remote: remoteStates[session.id],
+                remote: remoteStates[session.id] ?? context.fallbackStates[session.id],
                 hasShell: context.runningShellSessions.contains(session.id),
                 unreadAfter: launchedAt
             )
@@ -239,7 +242,7 @@ public final class SessionStore: ObservableObject {
             lastMessageType: text(statement, 11),
             model: model,
             workState: Format.workState(metadata),
-            lastUserMessageAt: sqlite3_column_type(statement, 12) == SQLITE_NULL
+            turnStartedAt: sqlite3_column_type(statement, 12) == SQLITE_NULL
                 ? nil
                 : sqlite3_column_int64(statement, 12),
             context: context.usage[id]
