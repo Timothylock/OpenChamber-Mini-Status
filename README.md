@@ -124,6 +124,16 @@ scripts/        bundle, icon, install, uninstall, dist
 
 `make snapshot` renders the live widget to a PNG with the real data, and `--snapshot-settings PATH` renders the settings window. That is how the screenshot above was made, without needing screen recording permission.
 
+### Releasing
+
+`.github/workflows/release.yml` builds the artifacts on GitHub's macOS runner. Either push a tag:
+
+```sh
+git tag v1.2.3 && git push origin v1.2.3
+```
+
+or publish a release by hand in the GitHub UI. The workflow runs the tests, builds `OpenChamber-Mini-Status-<version>.dmg` and the matching zip, and attaches both to that release. The tag name without the leading `v` becomes the bundle version. Builds are ad hoc signed, not notarized.
+
 Logs land in Console under subsystem `dev.openchamber.mini-status`:
 
 ```sh
