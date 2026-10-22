@@ -25,17 +25,23 @@ Each row carries the chat title, where it lives, how much of the model's context
 
 ## Install
 
-### From a release
+### With the install script (recommended)
 
-Download `OpenChamber-Mini-Status-1.0.0.dmg` from [Releases](https://github.com/Timothylock/OpenChamber-Mini-Status/releases), open it, and drag **OpenChamber Mini Status** onto the Applications folder next to it. Then launch it from Applications.
+```sh
+curl -fsSL https://raw.githubusercontent.com/Timothylock/OpenChamber-Mini-Status/main/scripts/install-from-release.sh | bash
+```
 
-The build is signed ad hoc, not notarized, so the first launch may be blocked. Open it once with right-click > Open, or clear the download flag:
+Downloads the latest release, copies it to `~/Applications` and opens it. A download made with `curl` carries no quarantine flag, so macOS skips the unverified-developer detour and the app just runs. The script is short; [read it first](scripts/install-from-release.sh) if you would rather.
+
+### From the release page (manual)
+
+Prefer to do it by hand? Download the disk image from the [latest release](https://github.com/Timothylock/OpenChamber-Mini-Status/releases/latest), open it, and drag **OpenChamber Mini Status** onto the Applications folder next to it. There is a `.zip` next to the disk image if you would rather unzip the app yourself.
+
+Builds are ad hoc signed, not notarized, and macOS 15 and later dropped right-click > Open for that case: the first launch is blocked until you allow it once in System Settings > Privacy & Security, where you click **Open Anyway** and authenticate. Or clear the flag yourself before launching:
 
 ```sh
 xattr -d com.apple.quarantine "/Applications/OpenChamber Mini Status.app"
 ```
-
-There is a `.zip` next to the disk image if you would rather unzip the app yourself.
 
 The app has no Dock icon. It appears as the widget, as an icon in the menu bar, and as a login item.
 
@@ -122,7 +128,7 @@ Layout:
 Sources/Core/   data reading, phase rules, formatting, context fetching, preferences
 Sources/App/    SwiftUI views, the floating panel, menu bar item, settings, entry point
 Tests/          executable test harness (the toolchain here has no SwiftPM)
-scripts/        bundle, icon, install, uninstall, dist
+scripts/        bundle, icon, install, install-from-release, uninstall, dist
 ```
 
 `make docs` regenerates the images in `docs/` from invented chats (`--snapshot-demo`) and the settings window (`--snapshot-settings`), so no real project names end up in the README. `make snapshot` instead renders the live widget with your own data. Neither needs screen recording permission.

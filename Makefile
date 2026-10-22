@@ -6,14 +6,24 @@ export VERSION
 
 CORE_SOURCES := $(wildcard Sources/Core/*.swift)
 APP_SOURCES := $(wildcard Sources/App/*.swift)
+SOURCES := $(CORE_SOURCES) $(APP_SOURCES)
+# One release for Apple silicon and Intel. swiftc has no -arch flag, so build each
+# slice for its target and join them.
+ARCHS := arm64 x86_64
+TARGET_MIN := apple-macosx13.0
 
 .PHONY: build test bundle icon icon-run run snapshot docs install uninstall dist clean
 
 build: $(BINARY)
 
-$(BINARY): $(CORE_SOURCES) $(APP_SOURCES)
+$(BINARY): $(SOURCES)
 	@mkdir -p build
-	swiftc -O -swift-version 5 $(CORE_SOURCES) $(APP_SOURCES) -o $(BINARY)
+	@set -e; \
+	for arch in $(ARCHS); do \
+		echo "swiftc $$arch"; \
+		swiftc -O -swift-version 5 -target $$arch-$(TARGET_MIN) $(SOURCES) -o build/mini-status-$$arch; \
+	done
+	lipo -create $(foreach arch,$(ARCHS),build/mini-status-$(arch)) -output $(BINARY)
 
 test:
 	@mkdir -p build

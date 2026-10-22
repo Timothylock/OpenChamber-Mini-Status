@@ -22,4 +22,12 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")" = "dev.openchamber.mini-status"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")" = "1.0.0"
           test "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' "$APP/Contents/Info.plist")" = "true"
+          lipo -info "$APP/Contents/MacOS/mini-status" | grep -q arm64
+          lipo -info "$APP/Contents/MacOS/mini-status" | grep -q x86_64
           codesign --verify --deep --strict "$APP"
+      - name: Check the install script
+        run: |
+          make dist
+          MINI_STATUS_INSTALL_URL="file://$PWD/dist/OpenChamber-Mini-Status-1.0.0.zip" \
+            bash scripts/install-from-release.sh
+          test -d "$HOME/Applications/OpenChamber Mini Status.app"
