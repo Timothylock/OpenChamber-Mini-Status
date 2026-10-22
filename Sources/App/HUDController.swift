@@ -17,6 +17,7 @@ final class HUDController: NSObject {
     private var fittedHeight: CGFloat = 0
     private var resizeTimer: Timer?
     private var preferenceCancellable: AnyCancellable?
+    private var screenObserver: NSObjectProtocol?
 
     private static let originKey = "windowOrigin"
 
@@ -52,12 +53,25 @@ final class HUDController: NSObject {
                 guard !enabled else { return }
                 self?.setHovering(false)
             }
+
+        // A monitor can disappear while the widget sits on it.
+        screenObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.clampToVisibleScreen()
+        }
     }
 
     func stop() {
         store.stop()
         resizeTimer?.invalidate()
         resizeTimer = nil
+        if let screenObserver {
+            NotificationCenter.default.removeObserver(screenObserver)
+            self.screenObserver = nil
+        }
     }
 
     // MARK: panel
@@ -164,7 +178,7 @@ final class HUDController: NSObject {
         guard let panel else { return }
         if let stored = defaults.string(forKey: Self.originKey) {
             let saved = NSPointFromString(stored)
-            if let screen = NSScreen.screens.first(where: { $0.visibleFrame.insetBy(dx: -40, dy: -40).contains(saved) }) {
+            if let screen = screenContaining(saved) {
                 panel.setFrameOrigin(clamp(saved, to: screen, height: panel.frame.height))
                 return
             }
@@ -176,6 +190,19 @@ final class HUDController: NSObject {
             y: visible.minY + Config.edgeInset
         )
         panel.setFrameOrigin(origin)
+    }
+
+    /// Keeps the panel reachable after a display is unplugged or the arrangement changes.
+    private func clampToVisibleScreen() {
+        guard let panel else { return }
+        let frame = panel.frame
+        guard let screen = screenContaining(frame.origin) ?? NSScreen.main ?? NSScreen.screens.first else { return }
+        panel.setFrameOrigin(clamp(frame.origin, to: screen, height: frame.height))
+        defaults.set(NSStringFromPoint(panel.frame.origin), forKey: Self.originKey)
+    }
+
+    private func screenContaining(_ point: NSPoint) -> NSScreen? {
+        NSScreen.screens.first { $0.visibleFrame.insetBy(dx: -40, dy: -40).contains(point) }
     }
 
     func resetPosition() {
