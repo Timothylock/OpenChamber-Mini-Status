@@ -105,6 +105,47 @@ let selected = Selection.rows(
 )
 equal(selected.map(\.id), ["a1", "a2", "r1", "d1"], "waiting then running then recent, cut to four")
 equal(Selection.rows(attention: [], running: [], done: [row("d1", .done)], limit: 0).count, 0, "zero limit")
+equal(
+    Selection.rows(
+        attention: [],
+        running: [row("r2", .running), row("r1", .running)],
+        done: [row("d1", .done)],
+        previous: ["r1", "d1", "r2"]
+    ).map(\.id),
+    ["r1", "d1", "r2"],
+    "a reply from another chat does not reshuffle rows already on screen"
+)
+equal(
+    Selection.rows(
+        attention: [],
+        running: [row("r3", .running), row("r1", .running)],
+        done: [row("d1", .done)],
+        previous: ["d1", "r1"]
+    ).map(\.id),
+    ["d1", "r1", "r3"],
+    "a new running chat joins at the end"
+)
+equal(
+    Selection.rows(
+        attention: [row("r2", .attention)],
+        running: [row("r1", .running)],
+        done: [row("d1", .done)],
+        previous: ["r1", "r2", "d1"]
+    ).map(\.id),
+    ["r2", "r1", "d1"],
+    "a chat that needs you jumps to the top"
+)
+equal(
+    Selection.rows(
+        attention: [row("n1", .attention)],
+        running: [row("r1", .running)],
+        done: [row("d1", .done), row("d2", .done)],
+        limit: 3,
+        previous: ["r1", "d1", "d2"]
+    ).map(\.id),
+    ["n1", "r1", "d1"],
+    "a chat that needs you takes the last slot"
+)
 
 check(Selection.visible(archived: true, phase: .running, onlyActive: true), "archived chat resumed into work shows")
 check(Selection.visible(archived: true, phase: .attention, onlyActive: false), "archived chat that wants you shows")

@@ -107,7 +107,7 @@ struct SessionRowView: View {
     private var background: Color {
         switch row.phase {
         case .attention: return Theme.attention.opacity(0.10)
-        case .running: return Theme.running.opacity(0.09)
+        case .running: return .clear
         case .done: return .white.opacity(hovering ? 0.10 : 0.0)
         }
     }

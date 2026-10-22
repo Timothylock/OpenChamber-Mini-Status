@@ -8,7 +8,7 @@ Each row carries the chat title, where it lives, how much of the model's context
 
 ## What it does
 
-- Four rows, in priority order: waiting on you, then running, then most recently touched. Running means the chat's session is busy, or a background shell it started is still going, the same two signals OpenChamber's sidebar draws its blue icon from.
+- Four rows. Chats that need you sit on top, everything else keeps the slot it already had, so background replies never reshuffle the list; new chats join at the end. Running means the chat's session is busy, or a background shell it started is still going, the same two signals OpenChamber's sidebar draws its blue icon from.
 - Context window percentage per chat, counted the way the model sees it (input, output, reasoning, cache read and write). The bar turns red past 85%, where compaction starts to loom.
 - Cost in dollars, and a clock: how long the current turn has been running, or how long ago the last one finished.
 - A chat that just finished keeps its blue row for five seconds before it turns grey or drops out, so the list does not blink while OpenChamber catches up.

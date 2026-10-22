@@ -199,7 +199,13 @@ public final class SessionStore: ObservableObject {
 
         // Filtering to active chats drops the four-row ceiling: the point is to see all of them.
         let limit = preferences.onlyActive ? Int.max : Config.rowLimit
-        rows = Selection.rows(attention: attention, running: running, done: done, limit: limit)
+        rows = Selection.rows(
+            attention: attention,
+            running: running,
+            done: done,
+            limit: limit,
+            previous: rows.map(\.id)
+        )
         context.setTargets(targets)
         context.setDirectories(directories)
     }

@@ -75,7 +75,7 @@ public enum Format {
     }
 }
 
-/// Which rows the widget shows: waiting first, then running, then most recent, cut short.
+/// Which rows the widget shows: waiting first, then whatever was already there, then new.
 public enum Selection {
     /// Archived chats stay out of the list only while they are finished; resuming one
     /// marks it In work again, and a running chat must always show.
@@ -84,12 +84,49 @@ public enum Selection {
         return !archived && !onlyActive
     }
 
+    /// A chat keeps the slot it had on the previous refresh, so background replies never
+    /// reshuffle the list. Only a chat that starts waiting on you moves up, to the top.
+    private static func rows(
+        first: [Row],
+        rest: [Row],
+        limit: Int,
+        previous: [String]
+    ) -> [Row] {
+        let firstIDs = Set(first.map(\.id))
+        let restByID = Dictionary(rest.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+
+        var orderedRest: [Row] = []
+        var placed: Set<String> = []
+        // Rows already on screen hold their order, even when another chat replies.
+        for id in previous where !firstIDs.contains(id) {
+            guard let row = restByID[id], !placed.contains(id) else { continue }
+            orderedRest.append(row)
+            placed.insert(id)
+        }
+        // New arrivals join after the rows that were already there.
+        for row in rest where !placed.contains(row.id) {
+            orderedRest.append(row)
+            placed.insert(row.id)
+        }
+
+        var orderedFirst: [Row] = []
+        for id in previous {
+            guard let row = first.first(where: { $0.id == id }) else { continue }
+            orderedFirst.append(row)
+        }
+        let orderedFirstIDs = Set(orderedFirst.map(\.id))
+        orderedFirst += first.filter { !orderedFirstIDs.contains($0.id) }
+
+        return Array((orderedFirst + orderedRest).prefix(max(0, limit)))
+    }
+
     public static func rows(
         attention: [Row],
         running: [Row],
         done: [Row],
-        limit: Int = Config.rowLimit
+        limit: Int = Config.rowLimit,
+        previous: [String] = []
     ) -> [Row] {
-        Array((attention + running + done).prefix(max(0, limit)))
+        rows(first: attention, rest: running + done, limit: limit, previous: previous)
     }
 }
